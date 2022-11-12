@@ -73,23 +73,28 @@ Color traceRay(const Ray &r, Scene scene, int depth) {
     } else {
         // shadow ray intersects with an object
         directColor = Color(0.0f, 0.0f, 0.0f);
-    }
-    c = directColor;
+    }     
+    c = directColor * (1 - hit.material.reflectivity - hit.material.transparency);
 
-        
-    if (hit.material.reflectivity > 0) {
-        // check reflections only when the object has the reflectivity
-        if (depth < 0) {
-            // do nothing and return as no more depth
-        }
-        else {
+    if (depth < 0) {
+        // do nothing and return as no more depth
+    } else {
+        if (hit.material.reflectivity > 0) {
+            // check reflections only when the object has the reflectivity
             // continue as still have the depth level
             Ray reflectedRay = hit.getReflectedRay(); // get the reflected ray from the hit point
-            c = c*(1-hit.material.reflectivity) +  hit.material.reflectivity * traceRay(reflectedRay, scene, depth - 1); // sum all colors
+            Color reflectionColor = traceRay(reflectedRay, scene, depth - 1);
+            c += hit.material.reflectivity * reflectionColor;
+        }
+
+        if (hit.material.transparency > 0) {
+            // check reflections only when the object has the reflectivity
+            // continue as still have the depth level
+            Ray refractedRay = hit.getRefractedRay(); // get the reflected ray from the hit point
+            Color refractionColor = traceRay(refractedRay, scene, depth - 1);
+            c += hit.material.transparency * refractionColor;
         }
     }
-    
-    
     return c;
 }
 
@@ -148,8 +153,8 @@ int main() {
      scene.push(Sphere(Vec3(9.0f, 10.0f, 0.0f), 3.0f, yellowReflective));
 
     // TODO: Uncomment to render refractive spheres
-    // scene.push(Sphere(Vec3(-7.0f, 3.0f, 0.0f), 3.0f, transparent));
-    // scene.push(Sphere(Vec3(-9.0f, 10.0f, 0.0f), 3.0f, transparent));
+     scene.push(Sphere(Vec3(-7.0f, 3.0f, 0.0f), 3.0f, transparent));
+     scene.push(Sphere(Vec3(-9.0f, 10.0f, 0.0f), 3.0f, transparent));
 
     // Setup camera
     Vec3 eye(0.0f, 10.0f, 30.0f);

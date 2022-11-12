@@ -1,5 +1,5 @@
 #include "swIntersection.h"
-
+#include <cmath>
 namespace sw {
 
 Ray Intersection::getShadowRay(const Vec3 &lightPos) {
@@ -27,7 +27,9 @@ Ray Intersection::getRefractedRay(void) {
 
     // TODO: Implement refraction
     // -------------------
-    Vec3 R = D;
+    float r = -D * N;
+    float c = 1 - pow(eta, 2) * (1 - pow(r,2));
+    Vec3 R = eta * D + (eta * r - sqrt(c))*N;
     // -------------------
 
     return Ray(position, R, 0.01f, FLT_MAX);
