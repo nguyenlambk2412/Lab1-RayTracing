@@ -55,24 +55,41 @@ Color traceRay(const Ray &r, Scene scene, int depth) {
     Color c, directColor, reflectedColor, refractedColor;
     
     Intersection hit, shadow;
-    if (!scene.intersect(r, hit)) return Color(0.0f, 0.0f, 0.0f); // Background color
 
-    //light info
+    //check 1st hit
+    if (!scene.intersect(r, hit)) return Color(0.0f, 0.0f, 0.0f); // Background color when no hit
+    //Hit!. Continue calculating
+
+    // light info
     const Vec3 lightPos(0.0f, 30.0f, -5.0f);
     Vec3 lightDir = lightPos - hit.position;
     lightDir.normalize();
 
     Ray shadowRay = hit.getShadowRay(lightPos);
-    if (!scene.intersect(shadowRay, shadow))
-    {
-        //No intersect between the shadowRay and objects
-        directColor = hit.material.color * (lightDir * hit.normal); // The 1st *: normal multiple, the 2nd *:dot product
+    if (!scene.intersect(shadowRay, shadow)) {
+        // No intersect between the shadowRay and objects
+        directColor =
+            hit.material.color * (lightDir * hit.normal); // The 1st *: normal multiple, the 2nd *:dot product
     } else {
-        //shadow ray intersects with an object
+        // shadow ray intersects with an object
         directColor = Color(0.0f, 0.0f, 0.0f);
     }
     c = directColor;
 
+        
+    if (hit.material.reflectivity > 0) {
+        // check reflections only when the object has the reflectivity
+        if (depth < 0) {
+            // do nothing and return as no more depth
+        }
+        else {
+            // continue as still have the depth level
+            Ray reflectedRay = hit.getReflectedRay(); // get the reflected ray from the hit point
+            c = c*(1-hit.material.reflectivity) +  hit.material.reflectivity * traceRay(reflectedRay, scene, depth - 1); // sum all colors
+        }
+    }
+    
+    
     return c;
 }
 
@@ -142,7 +159,7 @@ int main() {
     camera.setup(imageWidth, imageHeight);
 
     // Ray trace pixels
-    int depth = 2;
+    int depth = 3;
     std::cout << "Rendering... ";
     clock_t start = clock();
     for (int j = 0; j < imageHeight; ++j) {

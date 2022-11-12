@@ -13,7 +13,7 @@ Ray Intersection::getReflectedRay(void) {
 
     // TODO: Implement reflection
     // -------------------
-    Vec3 R = D;
+    Vec3 R = D - 2 * (N * D) * N;
     // -------------------
 
     return Ray(position, R, 0.01f, FLT_MAX);
