@@ -167,18 +167,24 @@ int main() {
     int depth = 3;
     std::cout << "Rendering... ";
     clock_t start = clock();
+    int noOfStratifiedLevel = 3;
     for (int j = 0; j < imageHeight; ++j) {
         for (int i = 0; i < imageWidth; ++i) {
 
-            Color pixel;
+             Color pixel = Vec3(0.0, 0.0, 0.0);
+            // Supersampling
+             for (int x = 0; x < noOfStratifiedLevel; x++) {
+                 for (int y = 0; y < noOfStratifiedLevel; y++) {
+                     // Get center of pixel coordinate
+                     float cx = ((float)i) + 1.0f / 6.0f * (float)(2*x + 1);
+                     float cy = ((float)j) + 1.0f / 6.0f * (float)(2 * y + 1);
 
-            // Get center of pixel coordinate
-            float cx = ((float)i) + 0.5f;
-            float cy = ((float)j) + 0.5f;
-
-            // Get a ray and trace it
-            Ray r = camera.getRay(cx, cy);
-            pixel = traceRay(r, scene, depth);
+                    // Get a ray and trace it
+                    Ray r = camera.getRay(cx, cy);
+                    pixel += traceRay(r, scene, depth);
+                }
+            }
+             pixel = pixel*(float)(1/pow(noOfStratifiedLevel, 2));
 
             // Write pixel value to image
             writeColor((j * imageWidth + i) * numChannels, pixel, pixels);
