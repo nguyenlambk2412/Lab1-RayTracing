@@ -53,17 +53,24 @@ void writeColor(int index, Vec3 p, uint8_t *pixels) {
 
 Color traceRay(const Ray &r, Scene scene, int depth) {
     Color c, directColor, reflectedColor, refractedColor;
-    if (depth < 0) return c;
-
+    
     Intersection hit, shadow;
     if (!scene.intersect(r, hit)) return Color(0.0f, 0.0f, 0.0f); // Background color
 
+    //light info
     const Vec3 lightPos(0.0f, 30.0f, -5.0f);
     Vec3 lightDir = lightPos - hit.position;
     lightDir.normalize();
 
-    directColor = Color(1.0f, 1.0f, 1.0f);
-
+    Ray shadowRay = hit.getShadowRay(lightPos);
+    if (!scene.intersect(shadowRay, shadow))
+    {
+        //No intersect between the shadowRay and objects
+        directColor = hit.material.color * (lightDir * hit.normal); // The 1st *: normal multiple, the 2nd *:dot product
+    } else {
+        //shadow ray intersects with an object
+        directColor = Color(0.0f, 0.0f, 0.0f);
+    }
     c = directColor;
 
     return c;
@@ -106,22 +113,22 @@ int main() {
     };
 
     // TODO: Uncomment to render floor triangles
-    // scene.push(Triangle(&vertices[0], whiteDiffuse)); // Floor 1
-    // scene.push(Triangle(&vertices[3], whiteDiffuse)); // Floor 2
+    scene.push(Triangle(&vertices[0], whiteDiffuse)); // Floor 1
+    scene.push(Triangle(&vertices[3], whiteDiffuse)); // Floor 2
 
     // TODO: Uncomment to render Cornell box
-    // scene.push(Triangle(&vertices[6], whiteDiffuse));  // Back wall 1
-    // scene.push(Triangle(&vertices[9], whiteDiffuse));  // Back wall 2
-    // scene.push(Triangle(&vertices[12], whiteDiffuse)); // Ceiling 1
-    // scene.push(Triangle(&vertices[15], whiteDiffuse)); // Ceiling 2
-    // scene.push(Triangle(&vertices[18], redDiffuse));   // Red wall 1
-    // scene.push(Triangle(&vertices[21], redDiffuse));   // Red wall 2
-    // scene.push(Triangle(&vertices[24], greenDiffuse)); // Green wall 1
-    // scene.push(Triangle(&vertices[27], greenDiffuse)); // Green wall 2
+     scene.push(Triangle(&vertices[6], whiteDiffuse));  // Back wall 1
+     scene.push(Triangle(&vertices[9], whiteDiffuse));  // Back wall 2
+     scene.push(Triangle(&vertices[12], whiteDiffuse)); // Ceiling 1
+     scene.push(Triangle(&vertices[15], whiteDiffuse)); // Ceiling 2
+     scene.push(Triangle(&vertices[18], redDiffuse));   // Red wall 1
+     scene.push(Triangle(&vertices[21], redDiffuse));   // Red wall 2
+     scene.push(Triangle(&vertices[24], greenDiffuse)); // Green wall 1
+     scene.push(Triangle(&vertices[27], greenDiffuse)); // Green wall 2
 
     // TODO: Uncomment to render reflective spheres
-    // scene.push(Sphere(Vec3(7.0f, 3.0f, 0.0f), 3.0f, yellowReflective));
-    // scene.push(Sphere(Vec3(9.0f, 10.0f, 0.0f), 3.0f, yellowReflective));
+     scene.push(Sphere(Vec3(7.0f, 3.0f, 0.0f), 3.0f, yellowReflective));
+     scene.push(Sphere(Vec3(9.0f, 10.0f, 0.0f), 3.0f, yellowReflective));
 
     // TODO: Uncomment to render refractive spheres
     // scene.push(Sphere(Vec3(-7.0f, 3.0f, 0.0f), 3.0f, transparent));
@@ -135,7 +142,7 @@ int main() {
     camera.setup(imageWidth, imageHeight);
 
     // Ray trace pixels
-    int depth = 3;
+    int depth = 2;
     std::cout << "Rendering... ";
     clock_t start = clock();
     for (int j = 0; j < imageHeight; ++j) {
